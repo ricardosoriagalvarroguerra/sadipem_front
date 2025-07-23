@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useRef, useState, useEffect } from 'react';
+import useWindowSize from './hooks/useWindowSize';
 import Particles from 'react-tsparticles';
 import { loadFull } from 'tsparticles';
 import fonpilogo from './assets/fonpilogo.png';
@@ -47,6 +48,9 @@ export default function HomePage() {
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [geoData, setGeoData] = useState(null);
   const svgRef = useRef();
+  const { width: windowWidth } = useWindowSize();
+  const isMobile = windowWidth < 768;
+  const mapWidth = Math.min(520, windowWidth - (isMobile ? 40 : 200));
 
   useEffect(() => {
     fetch('/geojson/southamerica.json')
@@ -190,18 +194,18 @@ export default function HomePage() {
         </div>
         <div style={{
           display: 'flex',
-          flexDirection: 'row',
+          flexDirection: isMobile ? 'column' : 'row',
           alignItems: 'center',
           justifyContent: 'center',
           width: '100%',
           maxWidth: 1200,
           margin: '0 auto',
           zIndex: 2,
-          gap: 32,
+          gap: isMobile ? 16 : 32,
           position: 'relative',
         }}>
           {/* Columna izquierda: texto y barra de selección */}
-          <div style={{flex: 1, minWidth: 320, maxWidth: 500, paddingRight: 32}}>
+          <div style={{flex: 1, minWidth: isMobile ? '100%' : 320, maxWidth: isMobile ? '100%' : 500, paddingRight: isMobile ? 0 : 32}}>
             <h1 style={{color: '#c1121f', fontWeight: 700, fontSize: '2.5rem', marginBottom: 16}}>Contexto Estratégico</h1>
             {/* Buscador de país moderno */}
             <div style={{ marginBottom: 24, position: 'relative', maxWidth: 320 }}>
@@ -290,8 +294,8 @@ export default function HomePage() {
             </button>
           </div>
           {/* Columna derecha: globo terraqueo SVG realista de Sudamérica */}
-          <div style={{flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', minWidth: 520, position: 'relative'}}>
-            <svg ref={svgRef} viewBox="0 0 520 520" width="520" height="520" style={{background: 'none'}}>
+          <div style={{flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', minWidth: isMobile ? '100%' : 520, position: 'relative'}}>
+            <svg ref={svgRef} viewBox="0 0 520 520" width={mapWidth} height={mapWidth} style={{background: 'none'}}>
               <circle cx="250" cy="260" r="240" fill="none" stroke="#111" strokeWidth="0.7" />
               <g id="paises" />
             </svg>

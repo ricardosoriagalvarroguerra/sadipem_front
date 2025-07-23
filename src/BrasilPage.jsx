@@ -1,6 +1,7 @@
 import * as d3 from 'd3';
 import { useEffect, useRef } from 'react';
 import { useState } from 'react';
+import useWindowSize from './hooks/useWindowSize';
 import { FaArrowUp } from 'react-icons/fa';
 import fonpilogo from './assets/fonpilogo.png';
 
@@ -206,6 +207,9 @@ export default function BrasilPage({ onBack, onNext }) {
   });
   const datosGraf2 = datosMunicipio.filter(d => d.tiempo_prestamo > 13);
 
+  const { width: windowWidth } = useWindowSize();
+  const isMobile = windowWidth < 768;
+
   // Cálculo de métricas para los botones
   // Promedio anual de aprobaciones EXTERNAS últimos 5 años (en millones USD)
   const now = new Date();
@@ -253,6 +257,8 @@ export default function BrasilPage({ onBack, onNext }) {
       porcentajeExterna: total > 0 ? (100 * externos / total).toFixed(1) : '0.0'
     };
   });
+
+  const chartWidth = Math.min(600, windowWidth - (isMobile ? 40 : 200));
 
   return (
     <div style={{ background: '#f7f7f9', padding: '0', position: 'relative' }}>
@@ -307,8 +313,8 @@ export default function BrasilPage({ onBack, onNext }) {
         }}
         style={{
           position: 'fixed',
-          top: 100,
-          right: 32,
+          top: isMobile ? 80 : 100,
+          right: isMobile ? 16 : 32,
           cursor: 'pointer',
           zIndex: 2000,
           display: 'flex',
@@ -333,8 +339,8 @@ export default function BrasilPage({ onBack, onNext }) {
         }}
         style={{
           position: 'fixed',
-          bottom: 100,
-          right: 32,
+          bottom: isMobile ? 80 : 100,
+          right: isMobile ? 16 : 32,
           cursor: 'pointer',
           zIndex: 2000,
           display: 'flex',
@@ -349,27 +355,27 @@ export default function BrasilPage({ onBack, onNext }) {
       >
         <FaArrowUp style={{ fontSize: 36, color: '#c1121f', transform: 'rotate(180deg)' }} />
       </div>
-      <div style={{ display: 'flex', gap: '2.5rem', alignItems: 'stretch', maxWidth: 1400, margin: '0 auto', padding: '0', flexWrap: 'wrap', height: 'calc(100vh - 72px)' }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1.5rem' : '2.5rem', alignItems: 'stretch', maxWidth: 1400, margin: '0 auto', padding: '0', flexWrap: 'wrap', height: isMobile ? 'auto' : 'calc(100vh - 72px)' }}>
         {/* Izquierda: Card descriptivo con título y texto */}
         <div
           style={{
             flex: 1,
-            minWidth: 380,
-            maxWidth: 480,
+            minWidth: isMobile ? '100%' : 320,
+            maxWidth: isMobile ? '100%' : 480,
             background: '#fff',
             borderRadius: 0,
             boxShadow: '0 4px 24px #0001',
             border: 'none',
             marginLeft: 0,
-            marginTop: '3.7rem',
+            marginTop: isMobile ? '1.5rem' : '3.7rem',
             marginBottom: 0,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'flex-start',
             padding: '2.5rem 2rem 2rem 2rem',
             boxSizing: 'border-box',
-            height: '100%',
-            minHeight: '100%',
+            height: isMobile ? 'auto' : '100%',
+            minHeight: isMobile ? 'auto' : '100%',
             position: 'relative',
             zIndex: 2,
             width: '100%',
@@ -409,7 +415,7 @@ export default function BrasilPage({ onBack, onNext }) {
           </div>
         </div>
         {/* Derecha: Gráficos */}
-        <div style={{ flex: 1, minWidth: 350, maxWidth: 700, display: 'flex', flexDirection: 'column', gap: 8, marginLeft: 56, paddingTop: 0, paddingLeft: 0, marginTop: 56 }}>
+        <div style={{ flex: 1, minWidth: isMobile ? '100%' : 300, maxWidth: isMobile ? '100%' : 700, display: 'flex', flexDirection: 'column', gap: 8, marginLeft: isMobile ? 0 : 56, paddingTop: 0, paddingLeft: 0, marginTop: isMobile ? 20 : 56 }}>
           {/* Métricas tipo botón arriba de los gráficos */}
           <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 32, marginBottom: 18, marginTop: '-2.5rem', marginLeft: 0 }}>
             <div style={{ background: '#f3f4f7', color: '#444', fontSize: '0.98rem', fontWeight: 500, borderRadius: 0, padding: '0.7em 1.6em 0.7em 1.2em', boxShadow: '0 1px 6px #0001', display: 'flex', alignItems: 'center', minWidth: 220, position: 'relative', fontFamily: 'inherit', border: 'none', marginRight: 0 }}>
@@ -429,7 +435,7 @@ export default function BrasilPage({ onBack, onNext }) {
             <span style={{ color: '#888', fontWeight: 600, fontSize: '1.01rem', letterSpacing: '0.01em' }}>Interno</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexDirection: 'row' }}>
-            <BarChartD3 data={datosGraf1} colorMap={colorMap} width={600} height={260} showXAxis={false} extendRefLinesDown={true} />
+            <BarChartD3 data={datosGraf1} colorMap={colorMap} width={chartWidth} height={260} showXAxis={false} extendRefLinesDown={true} />
             <div style={{ display: 'flex', alignItems: 'center', height: 260, marginRight: 8, justifyContent: 'center' }}>
               <div style={{ border: '2px solid #c1121f', borderRadius: 20, background: 'rgba(255,255,255,0.0)', color: '#c1121f', fontSize: '0.95rem', fontFamily: 'inherit', fontWeight: 500, letterSpacing: '0.01em', boxSizing: 'border-box', padding: '0.2em 1.2em', minWidth: 120, textAlign: 'center', whiteSpace: 'nowrap', display: 'inline-block', transform: 'rotate(90deg)', transformOrigin: 'center center' }}>
                 Plazo &gt; 0 Años
@@ -437,7 +443,7 @@ export default function BrasilPage({ onBack, onNext }) {
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexDirection: 'row' }}>
-            <BarChartD3 data={datosGraf2} colorMap={colorMap} width={600} height={260} showXAxis={true} showXAxisTicksOnly={true} />
+            <BarChartD3 data={datosGraf2} colorMap={colorMap} width={chartWidth} height={260} showXAxis={true} showXAxisTicksOnly={true} />
             <div style={{ display: 'flex', alignItems: 'center', height: 260, marginRight: 8, justifyContent: 'center' }}>
               <div style={{ border: '2px solid #c1121f', borderRadius: 20, background: 'rgba(255,255,255,0.0)', color: '#c1121f', fontSize: '0.95rem', fontFamily: 'inherit', fontWeight: 500, letterSpacing: '0.01em', boxSizing: 'border-box', padding: '0.2em 1.2em', minWidth: 120, textAlign: 'center', whiteSpace: 'nowrap', display: 'inline-block', transform: 'rotate(90deg)', transformOrigin: 'center center' }}>
                 Plazo &gt; 13 Años
