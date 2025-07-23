@@ -1,6 +1,7 @@
 import { FaArrowUp } from 'react-icons/fa';
 import fonpilogo from './assets/fonpilogo.png';
 import { useEffect, useRef, useState } from 'react';
+import useWindowSize from './hooks/useWindowSize';
 
 // Datos de clusters visualizados con PCA (completo, según el usuario)
 const CLUSTERS_DATA = [
@@ -390,6 +391,9 @@ export default function ClustersPage({ onBack, onNext }) {
   // No se usa API, los datos están embebidos
   const [vista, setVista] = useState('clusters'); // Siempre inicia en clusters
   const [d3Ready, setD3Ready] = useState(!!window.d3);
+  const { width: windowWidth } = useWindowSize();
+  const isMobile = windowWidth < 768;
+  const chartWidth = Math.min(750, windowWidth - (isMobile ? 40 : 200));
   useEffect(() => {
     if (!window.d3) {
       const script = document.createElement('script');
@@ -455,8 +459,8 @@ export default function ClustersPage({ onBack, onNext }) {
         }}
         style={{
           position: 'fixed',
-          top: 80,
-          right: 32,
+          top: isMobile ? 60 : 80,
+          right: isMobile ? 16 : 32,
           cursor: 'pointer',
           zIndex: 2000,
           display: 'flex',
@@ -481,8 +485,8 @@ export default function ClustersPage({ onBack, onNext }) {
         }}
         style={{
           position: 'fixed',
-          bottom: 40,
-          right: 32,
+          bottom: isMobile ? 40 : 40,
+          right: isMobile ? 16 : 32,
           cursor: 'pointer',
           zIndex: 2000,
           display: 'flex',
@@ -497,27 +501,27 @@ export default function ClustersPage({ onBack, onNext }) {
       >
         <FaArrowUp style={{ fontSize: 36, color: '#c1121f', transform: 'rotate(180deg)' }} />
       </div>
-      <div style={{ display: 'flex', gap: '2.5rem', alignItems: 'stretch', maxWidth: 1400, margin: '0 auto', padding: '0', flexWrap: 'wrap', height: 'calc(100vh - 72px)' }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1.5rem' : '2.5rem', alignItems: 'stretch', maxWidth: 1400, margin: '0 auto', padding: '0', flexWrap: 'wrap', height: isMobile ? 'auto' : 'calc(100vh - 72px)' }}>
         {/* Izquierda: Card descriptivo con título y texto */}
         <div
           style={{
             flex: 1,
-            minWidth: 380,
-            maxWidth: 480,
+            minWidth: isMobile ? '100%' : 320,
+            maxWidth: isMobile ? '100%' : 480,
             background: '#fff',
             borderRadius: 0,
             boxShadow: '0 4px 24px #0001',
             border: 'none',
             marginLeft: 0,
-            marginTop: '3.7rem',
+            marginTop: isMobile ? '1.5rem' : '3.7rem',
             marginBottom: 0,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'flex-start',
             padding: '2.5rem 2rem 2rem 2rem',
             boxSizing: 'border-box',
-            height: '100%',
-            minHeight: '100%',
+            height: isMobile ? 'auto' : '100%',
+            minHeight: isMobile ? 'auto' : '100%',
             position: 'relative',
             zIndex: 2,
             width: '100%',
@@ -535,7 +539,7 @@ export default function ClustersPage({ onBack, onNext }) {
           </div>
         </div>
         {/* Derecha: Header con título y botones alineados, y espacio para gráficos o insights */}
-        <div style={{ flex: 1, minWidth: 350, maxWidth: 700, display: 'flex', flexDirection: 'column', gap: 8, marginLeft: 0, paddingTop: 0, paddingLeft: 0, marginTop: '3.7rem' }}>
+        <div style={{ flex: 1, minWidth: isMobile ? '100%' : 300, maxWidth: isMobile ? '100%' : 700, display: 'flex', flexDirection: 'column', gap: 8, marginLeft: isMobile ? 0 : 0, paddingTop: 0, paddingLeft: 0, marginTop: isMobile ? 20 : '3.7rem' }}>
           {/* Header: solo los botones, sin título duplicado */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, width: '100%' }}>
             <div style={{ display: 'flex', gap: 32 }}>
@@ -570,7 +574,7 @@ export default function ClustersPage({ onBack, onNext }) {
           {/* Visualización: gráfico o tabla, ambos del mismo tamaño visual */}
           <div style={{ width: '100%', height: 600, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', fontSize: '1.2rem', background: 'transparent' }}>
             {vista === 'clusters' ? (
-              d3Ready ? <ScatterPlotClusters data={CLUSTERS_DATA} width={750} height={600} /> : <div style={{color:'#888', fontSize:16}}>Cargando gráfico...</div>
+              d3Ready ? <ScatterPlotClusters data={CLUSTERS_DATA} width={chartWidth} height={600} /> : <div style={{color:'#888', fontSize:16}}>Cargando gráfico...</div>
             ) : (
               <div style={{ width: '100%' }}><ClusterInsightsTable /></div>
             )}

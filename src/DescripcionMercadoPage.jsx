@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import useWindowSize from './hooks/useWindowSize';
 import { FaArrowUp } from 'react-icons/fa';
 import fonpilogo from './assets/fonpilogo.png';
 import ScatterPlot from './components/ScatterPlot';
@@ -20,6 +21,9 @@ export default function DescripcionMercadoPage({ onBack, onNext }) {
   const [vista, setVista] = useState('todos');
   const [ocultos, setOcultos] = useState([]); // categorías ocultas
   const [yMax, setYMax] = useState(115);
+  const { width: windowWidth } = useWindowSize();
+  const isMobile = windowWidth < 768;
+  const chartWidth = Math.min(650, windowWidth - (isMobile ? 40 : 200));
 
   // Altura y margen del área útil del gráfico
   const plotHeight = 500; // 600 - 40 (top) - 60 (bottom)
@@ -116,8 +120,8 @@ export default function DescripcionMercadoPage({ onBack, onNext }) {
         }}
         style={{
           position: 'fixed',
-          top: 100,
-          right: 32,
+          top: isMobile ? 80 : 100,
+          right: isMobile ? 16 : 32,
           cursor: 'pointer',
           zIndex: 2000,
           display: 'flex',
@@ -142,8 +146,8 @@ export default function DescripcionMercadoPage({ onBack, onNext }) {
         }}
         style={{
           position: 'fixed',
-          bottom: 100,
-          right: 32,
+          bottom: isMobile ? 80 : 100,
+          right: isMobile ? 16 : 32,
           cursor: 'pointer',
           zIndex: 2000,
           display: 'flex',
@@ -158,27 +162,27 @@ export default function DescripcionMercadoPage({ onBack, onNext }) {
       >
         <FaArrowUp style={{ fontSize: 36, color: '#c1121f', transform: 'rotate(180deg)' }} />
       </div>
-      <div style={{ display: 'flex', gap: '2.5rem', alignItems: 'stretch', maxWidth: 1400, margin: '0 auto', padding: '0', flexWrap: 'wrap', height: 'calc(100vh - 72px)' }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1.5rem' : '2.5rem', alignItems: 'stretch', maxWidth: 1400, margin: '0 auto', padding: '0', flexWrap: 'wrap', height: isMobile ? 'auto' : 'calc(100vh - 72px)' }}>
         {/* Izquierda: Card descriptivo con título y texto */}
         <div
           style={{
             flex: 1,
-            minWidth: 380,
-            maxWidth: 480,
+            minWidth: isMobile ? '100%' : 320,
+            maxWidth: isMobile ? '100%' : 480,
             background: '#fff',
             borderRadius: 0,
             boxShadow: '0 4px 24px #0001',
             border: 'none',
             marginLeft: 0,
-            marginTop: '3.7rem',
+            marginTop: isMobile ? '1.5rem' : '3.7rem',
             marginBottom: 0,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'flex-start',
             padding: '2.5rem 2rem 2rem 2rem',
             boxSizing: 'border-box',
-            height: '100%',
-            minHeight: '100%',
+            height: isMobile ? 'auto' : '100%',
+            minHeight: isMobile ? 'auto' : '100%',
             position: 'relative',
             zIndex: 2,
             width: '100%',
@@ -240,7 +244,7 @@ export default function DescripcionMercadoPage({ onBack, onNext }) {
           </div>
         </div>
         {/* Derecha: Espacio para gráficos */}
-        <div style={{ flex: 1, minWidth: 350, maxWidth: 700, display: 'flex', flexDirection: 'column', gap: 8, marginLeft: 0, paddingTop: 0, paddingLeft: 0, marginTop: 100 }}>
+        <div style={{ flex: 1, minWidth: isMobile ? '100%' : 300, maxWidth: isMobile ? '100%' : 700, display: 'flex', flexDirection: 'column', gap: 8, marginLeft: isMobile ? 0 : 0, paddingTop: 0, paddingLeft: 0, marginTop: isMobile ? 60 : 100 }}>
           <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%' }}>
             {/* Slider vertical para eje Y */}
             {/* Altura del área útil del gráfico */}
@@ -369,7 +373,7 @@ export default function DescripcionMercadoPage({ onBack, onNext }) {
               `}</style>
             </div>
             <div style={{ width: '100%', height: 600, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', fontSize: '1.2rem', background: 'transparent' }}>
-              <ScatterPlot datos={datos} width={650} height={600} acreedoresMostrar={acreedoresFiltrados} colorOverride={colorOverride} onLegendClick={handleToggleAcreedor} legendActive={a => !ocultos.includes(a)} legendOrder={acreedoresMostrar} yMax={yMax || LIMITE_MAXIMO} />
+              <ScatterPlot datos={datos} width={chartWidth} height={600} acreedoresMostrar={acreedoresFiltrados} colorOverride={colorOverride} onLegendClick={handleToggleAcreedor} legendActive={a => !ocultos.includes(a)} legendOrder={acreedoresMostrar} yMax={yMax || LIMITE_MAXIMO} />
             </div>
           </div>
         </div>

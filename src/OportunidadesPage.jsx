@@ -1,12 +1,16 @@
 import { FaArrowUp } from 'react-icons/fa';
 import fonpilogo from './assets/fonpilogo.png';
 import { useEffect, useState } from 'react';
+import useWindowSize from './hooks/useWindowSize';
 import { FaChevronDown, FaChevronRight } from 'react-icons/fa';
 
 export default function OportunidadesPage({ onBack, onNext }) {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
+  const { width: windowWidth } = useWindowSize();
+  const isMobile = windowWidth < 768;
+  const tableWidth = Math.min(730, windowWidth - (isMobile ? 40 : 200));
   return (
     <div style={{ background: '#f7f7f9', padding: '0', position: 'relative' }}>
       {/* Barra superior con logo y botón */}
@@ -60,8 +64,8 @@ export default function OportunidadesPage({ onBack, onNext }) {
         }}
         style={{
           position: 'fixed',
-          top: 80,
-          right: 32,
+          top: isMobile ? 60 : 80,
+          right: isMobile ? 16 : 32,
           cursor: 'pointer',
           zIndex: 2000,
           display: 'flex',
@@ -89,27 +93,27 @@ export default function OportunidadesPage({ onBack, onNext }) {
       >
         <FaArrowUp style={{ fontSize: 36, color: '#c1121f', transform: 'rotate(180deg)' }} />
       </div> */}
-      <div style={{ display: 'flex', gap: '2.5rem', alignItems: 'stretch', maxWidth: 1400, margin: '0 auto', padding: '0', flexWrap: 'wrap', height: 'calc(100vh - 72px)' }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1.5rem' : '2.5rem', alignItems: 'stretch', maxWidth: 1400, margin: '0 auto', padding: '0', flexWrap: 'wrap', height: isMobile ? 'auto' : 'calc(100vh - 72px)' }}>
         {/* Izquierda: Card descriptivo con título y texto */}
         <div
           style={{
             flex: 1,
-            minWidth: 380,
-            maxWidth: 480,
+            minWidth: isMobile ? '100%' : 320,
+            maxWidth: isMobile ? '100%' : 480,
             background: '#fff',
             borderRadius: 0,
             boxShadow: '0 4px 24px #0001',
             border: 'none',
             marginLeft: 0,
-            marginTop: '3.7rem',
+            marginTop: isMobile ? '1.5rem' : '3.7rem',
             marginBottom: 0,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'flex-start',
             padding: '2.5rem 2rem 2rem 2rem',
             boxSizing: 'border-box',
-            height: '100%',
-            minHeight: '100%',
+            height: isMobile ? 'auto' : '100%',
+            minHeight: isMobile ? 'auto' : '100%',
             position: 'relative',
             zIndex: 2,
             width: '100%',
@@ -130,8 +134,8 @@ export default function OportunidadesPage({ onBack, onNext }) {
           </div>
         </div>
         {/* Derecha: Espacio para gráficos o contenido futuro */}
-        <div style={{ flex: 1, minWidth: 350, maxWidth: 700, display: 'flex', flexDirection: 'column', gap: 8, marginLeft: 0, paddingTop: 0, paddingLeft: 0, marginTop: '3.7rem', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ width: 750, height: 600, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', fontSize: '1.2rem', background: 'transparent', overflow: 'hidden', boxSizing: 'border-box', margin: '0 auto' }}>
+        <div style={{ flex: 1, minWidth: isMobile ? '100%' : 300, maxWidth: isMobile ? '100%' : 700, display: 'flex', flexDirection: 'column', gap: 8, marginLeft: 0, paddingTop: 0, paddingLeft: 0, marginTop: isMobile ? 20 : '3.7rem', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: tableWidth, height: 600, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', fontSize: '1.2rem', background: 'transparent', overflow: 'hidden', boxSizing: 'border-box', margin: '0 auto' }}>
             {/* Tabla de mejores calificaciones por criterios invariables1 y CAPAG "A" */}
             <MejoresMunicipiosTable />
           </div>
