@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useRef, useState, useEffect } from 'react';
 import useWindowSize from './hooks/useWindowSize';
 import Particles from 'react-tsparticles';
-import { tsParticles, loadFull } from 'tsparticles';
+import { loadFull } from 'tsparticles';
 import fonpilogo from './assets/fonpilogo.png';
 import { FaSearch } from 'react-icons/fa';
 import BrasilPage from './BrasilPage';
@@ -101,10 +101,8 @@ export default function HomePage() {
     // Ya no se agrega la etiqueta de texto 'BRASIL'.
   }, [geoData, hovered]);
 
-  const particlesInit = async () => {
-    if (typeof tsParticles.checkVersion === 'function') {
-      await loadFull(tsParticles);
-    }
+  const particlesInit = async engine => {
+    await loadFull(engine);
   };
 
   return (
