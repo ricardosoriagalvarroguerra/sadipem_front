@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import useWindowSize from './hooks/useWindowSize';
 import Particles from 'react-tsparticles';
 import { loadFull } from 'tsparticles';
@@ -101,9 +101,9 @@ export default function HomePage() {
     // Ya no se agrega la etiqueta de texto 'BRASIL'.
   }, [geoData, hovered]);
 
-  const particlesInit = async engine => {
+  const particlesInit = useCallback(async engine => {
     await loadFull(engine);
-  };
+  }, []);
 
   return (
     <>
