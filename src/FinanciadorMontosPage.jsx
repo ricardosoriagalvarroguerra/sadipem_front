@@ -1,9 +1,9 @@
-import * as d3 from 'd3';
-import { useEffect, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import useWindowSize from './hooks/useWindowSize';
 import { FaArrowUp } from 'react-icons/fa';
 import fonpilogo from './assets/fonpilogo.png';
 import BoxPlot from './components/BoxPlot';
+import useCachedFetch from './hooks/useCachedFetch';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -11,11 +11,8 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 export default function FinanciadorMontosPage({ onBack, onNext }) {
   // Estados para datos, regiones, sectores, etc. (puedes adaptar según la lógica que necesites)
-  const [regiones, setRegiones] = useState([]);
-  const [sectores, setSectores] = useState([]);
   const [region, setRegion] = useState('');
   const [sector, setSector] = useState('');
-  const [datos, setDatos] = useState([]);
   const [vista, setVista] = useState('exteriores');
   // Listas de acreedores para cada vista
   const acreedoresExteriores = ['FONPLATA', 'BID', 'NDB', 'CAF', 'BIRF'];
@@ -23,24 +20,22 @@ export default function FinanciadorMontosPage({ onBack, onNext }) {
   const acreedoresTodos = ['Caixa', 'FONPLATA', 'BNDS', 'BID', 'NDB', 'CAF', 'BIRF'];
   const { width: windowWidth } = useWindowSize();
   const isMobile = windowWidth < 768;
-  const chartWidth = Math.min(700, windowWidth - (isMobile ? 40 : 200));
+  const chartWidth = useMemo(
+    () => Math.min(700, windowWidth - (isMobile ? 40 : 200)),
+    [windowWidth, isMobile]
+  );
   let acreedoresMostrar = acreedoresExteriores;
   if (vista === 'internos') acreedoresMostrar = acreedoresInternos;
   if (vista === 'todos') acreedoresMostrar = acreedoresTodos;
 
-  useEffect(() => {
-    fetch(`${API_URL}/api/regiones`).then(r => r.json()).then(d => setRegiones(d.regiones));
-    fetch(`${API_URL}/api/sectores`).then(r => r.json()).then(d => setSectores(d.sectores));
-  }, []);
-
-  useEffect(() => {
-    let url = `${API_URL}/api/datos`;
+  const queryString = useMemo(() => {
     const params = [];
     if (region) params.push(`region=${encodeURIComponent(region)}`);
     if (sector) params.push(`sector=${encodeURIComponent(sector)}`);
-    if (params.length) url += `?${params.join('&')}`;
-    fetch(url).then(r => r.json()).then(setDatos);
+    return params.length ? `?${params.join('&')}` : '';
   }, [region, sector]);
+  const datosResponse = useCachedFetch(`${API_URL}/api/datos${queryString}`, { initialData: [] });
+  const datos = Array.isArray(datosResponse.data) ? datosResponse.data : [];
 
   return (
     <div style={{ background: '#f7f7f9', padding: '0', position: 'relative' }}>
