@@ -1,18 +1,14 @@
 import * as d3 from 'd3';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import useWindowSize from './hooks/useWindowSize';
 import { FaArrowUp } from 'react-icons/fa';
 import fonpilogo from './assets/fonpilogo.png';
 // Aquí puedes importar tu componente de gráfico específico para esta página si lo necesitas
+import useCachedFetch from './hooks/useCachedFetch';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function RegionesFinanciadorPage({ onBack, onNext }) {
-  const [regiones, setRegiones] = useState([]);
-  const [sectores, setSectores] = useState([]);
-  const [region, setRegion] = useState('');
-  const [sector, setSector] = useState('');
-  const [datos, setDatos] = useState([]);
   const [vista, setVista] = useState('exteriores');
   // Listas de acreedores para cada vista
   const acreedoresExteriores = ['FONPLATA', 'BID', 'NDB', 'CAF', 'BIRF'];
@@ -21,32 +17,21 @@ export default function RegionesFinanciadorPage({ onBack, onNext }) {
   let acreedoresMostrar = acreedoresExteriores;
   if (vista === 'internos') acreedoresMostrar = acreedoresInternos;
   if (vista === 'todos') acreedoresMostrar = acreedoresTodos;
-  const [valoresEnte, setValoresEnte] = useState([]);
   const [mapaTipo, setMapaTipo] = useState('montos'); // 'montos', 'financiador', 'sectores'
   const { width: windowWidth } = useWindowSize();
   const isMobile = windowWidth < 768;
-  const chartWidth = Math.min(800, windowWidth - (isMobile ? 40 : 200));
-
-  useEffect(() => {
-    fetch(`${API_URL}/api/regiones`).then(r => r.json()).then(d => setRegiones(d.regiones));
-    fetch(`${API_URL}/api/sectores`).then(r => r.json()).then(d => setSectores(d.sectores));
-  }, []);
-
-  useEffect(() => {
-    let url = `${API_URL}/api/datos`;
-    const params = [];
-    if (region) params.push(`region=${encodeURIComponent(region)}`);
-    if (sector) params.push(`sector=${encodeURIComponent(sector)}`);
-    if (params.length) url += `?${params.join('&')}`;
-    fetch(url).then(r => r.json()).then(setDatos);
-  }, [region, sector]);
-
-  useEffect(() => {
-    fetch(`${API_URL}/api/valores_ente`).then(r => r.json()).then(setValoresEnte);
-  }, []);
+  const chartWidth = useMemo(
+    () => Math.min(800, windowWidth - (isMobile ? 40 : 200)),
+    [windowWidth, isMobile]
+  );
+  const valoresEnteResponse = useCachedFetch(`${API_URL}/api/valores_ente`, { initialData: [] });
+  const valoresEnte = Array.isArray(valoresEnteResponse.data) ? valoresEnteResponse.data : [];
 
   // Filtrar valoresEnte solo con garantia_soberana 'Si'
-  const valoresEnteFiltrados = valoresEnte.filter(v => (v.garantia_soberana === 'Si'));
+  const valoresEnteFiltrados = useMemo(
+    () => valoresEnte.filter(v => (v.garantia_soberana === 'Si')),
+    [valoresEnte]
+  );
 
   return (
     <div style={{ background: '#f7f7f9', padding: '0', position: 'relative' }}>

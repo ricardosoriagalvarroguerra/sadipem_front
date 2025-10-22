@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import useWindowSize from './hooks/useWindowSize';
 import { FaArrowUp } from 'react-icons/fa';
 import fonpilogo from './assets/fonpilogo.png';
 import ScatterPlot from './components/ScatterPlot';
+import useCachedFetch from './hooks/useCachedFetch';
 
 const acreedoresTodos = ['BIRF', 'BID', 'CAF', 'FONPLATA', 'Caixa', 'NDB', 'BNDS'];
 const acreedoresExternos = ['BIRF', 'BID', 'CAF', 'FONPLATA'];
@@ -16,14 +17,21 @@ function getAcreedores(vista) {
 }
 
 export default function DescripcionMercadoPage({ onBack, onNext }) {
-  const [datos, setDatos] = useState([]);
   const API_URL = import.meta.env.VITE_API_URL;
   const [vista, setVista] = useState('todos');
   const [ocultos, setOcultos] = useState([]); // categorías ocultas
   const [yMax, setYMax] = useState(115);
   const { width: windowWidth } = useWindowSize();
   const isMobile = windowWidth < 768;
-  const chartWidth = Math.min(650, windowWidth - (isMobile ? 40 : 200));
+  const chartWidth = useMemo(
+    () => Math.min(650, windowWidth - (isMobile ? 40 : 200)),
+    [windowWidth, isMobile]
+  );
+  const datosResponse = useCachedFetch(`${API_URL}/api/datos`, { initialData: [] });
+  const datos = useMemo(
+    () => (Array.isArray(datosResponse.data) ? datosResponse.data : []),
+    [datosResponse.data]
+  );
 
   // Altura y margen del área útil del gráfico
   const plotHeight = 500; // 600 - 40 (top) - 60 (bottom)
@@ -40,10 +48,6 @@ export default function DescripcionMercadoPage({ onBack, onNext }) {
   // Filtrar acreedores según los ocultos
   const acreedoresFiltrados = acreedoresMostrar.filter(a => !ocultos.includes(a));
 
-  useEffect(() => {
-    fetch(`${API_URL}/api/datos`).then(r => r.json()).then(setDatos);
-  }, [API_URL]);
-
   // Si cambia la vista, restaurar la lista de ocultos
   useEffect(() => {
     if (vista === 'todos') {
@@ -55,12 +59,15 @@ export default function DescripcionMercadoPage({ onBack, onNext }) {
 
   // Calcular el máximo valor de los datos (en millones)
   const LIMITE_MAXIMO = 750; // 750 millones
-  const maxDatos = Math.ceil(Math.max(1, ...datos.map(d => (d.valor_usd || 0) / 1e6)));
+  const maxDatos = useMemo(
+    () => Math.ceil(Math.max(1, ...datos.map(d => (d.valor_usd || 0) / 1e6))),
+    [datos]
+  );
   const maxValor = LIMITE_MAXIMO;
   useEffect(() => {
     if (yMax === null) setYMax(115);
     else if (yMax > LIMITE_MAXIMO) setYMax(LIMITE_MAXIMO);
-  }, [maxValor]);
+  }, [maxValor, yMax]);
 
   // Handler para click en la leyenda
   const handleToggleAcreedor = (acreedor) => {

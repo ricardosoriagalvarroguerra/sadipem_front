@@ -1,9 +1,9 @@
 import * as d3 from 'd3';
-import { useEffect, useRef } from 'react';
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import useWindowSize from './hooks/useWindowSize';
 import { FaArrowUp } from 'react-icons/fa';
 import fonpilogo from './assets/fonpilogo.png';
+import useCachedFetch from './hooks/useCachedFetch';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -177,88 +177,95 @@ function BarChartD3({ data, width = 520, height = 240, colorMap, showXAxis = tru
 }
 
 export default function BrasilPage({ onBack, onNext }) {
-  const [regiones, setRegiones] = useState([]);
-  const [sectores, setSectores] = useState([]);
   const [region, setRegion] = useState('');
   const [sector, setSector] = useState('');
-  const [datos, setDatos] = useState([]);
-
-  useEffect(() => {
-    fetch(`${API_URL}/api/regiones`).then(r => r.json()).then(d => setRegiones(d.regiones));
-    fetch(`${API_URL}/api/sectores`).then(r => r.json()).then(d => setSectores(d.sectores));
-  }, []);
-
-  useEffect(() => {
-    let url = `${API_URL}/api/datos`;
+  const queryString = useMemo(() => {
     const params = [];
     if (region) params.push(`region=${encodeURIComponent(region)}`);
     if (sector) params.push(`sector=${encodeURIComponent(sector)}`);
-    if (params.length) url += `?${params.join('&')}`;
-    fetch(url).then(r => r.json()).then(setDatos);
+    return params.length ? `?${params.join('&')}` : '';
   }, [region, sector]);
+  const datosResponse = useCachedFetch(`${API_URL}/api/datos${queryString}`, { initialData: [] });
+  const datos = Array.isArray(datosResponse.data) ? datosResponse.data : [];
 
   // Datos para los gráficos
   const colorMap = { 'Externo': '#c1121f', 'Interno': '#888' };
   // Filtrar solo Município
-  const datosMunicipio = datos.filter(d => d.tipo_ente === 'Município');
-  const datosGraf1 = datosMunicipio.filter(d => {
-    const year = new Date(d.fecha_contratacion).getFullYear();
-    return year !== 2009;
-  });
-  const datosGraf2 = datosMunicipio.filter(d => d.tiempo_prestamo > 13);
+  const datosMunicipio = useMemo(
+    () => datos.filter(d => d.tipo_ente === 'Município'),
+    [datos]
+  );
+  const datosGraf1 = useMemo(() => {
+    return datosMunicipio.filter(d => {
+      const year = new Date(d.fecha_contratacion).getFullYear();
+      return year !== 2009;
+    });
+  }, [datosMunicipio]);
+  const datosGraf2 = useMemo(
+    () => datosMunicipio.filter(d => d.tiempo_prestamo > 13),
+    [datosMunicipio]
+  );
 
   const { width: windowWidth } = useWindowSize();
   const isMobile = windowWidth < 768;
 
   // Cálculo de métricas para los botones
-  // Promedio anual de aprobaciones EXTERNAS últimos 5 años (en millones USD)
-  const now = new Date();
-  const lastYear = now.getFullYear();
-  const datosUlt5Externo = datosMunicipio.filter(d => {
-    const year = new Date(d.fecha_contratacion).getFullYear();
-    return year >= lastYear - 4 && year <= lastYear && d.RGF_clasificacion === 'Externo';
-  });
-  const totalAprobUlt5Externo = datosUlt5Externo.reduce((sum, d) => sum + (d.valor_usd || 0), 0);
-  const promAprobUlt5 = totalAprobUlt5Externo / 5 / 1e6; // millones USD solo externos
+  const lastYear = useMemo(() => new Date().getFullYear(), []);
+  const {
+    promAprobUlt5,
+    promFonplata,
+    tablaPlazos,
+  } = useMemo(() => {
+    const datosUlt5Externo = datosMunicipio.filter(d => {
+      const year = new Date(d.fecha_contratacion).getFullYear();
+      return year >= lastYear - 4 && year <= lastYear && d.RGF_clasificacion === 'Externo';
+    });
+    const totalAprobUlt5Externo = datosUlt5Externo.reduce((sum, d) => sum + (d.valor_usd || 0), 0);
+    const promAprob = totalAprobUlt5Externo / 5 / 1e6;
 
-  // Definir datosUlt5 para todos los préstamos de los últimos 5 años
-  const datosUlt5 = datosMunicipio.filter(d => {
-    const year = new Date(d.fecha_contratacion).getFullYear();
-    return year >= lastYear - 4 && year <= lastYear;
-  });
+    const datosUlt5 = datosMunicipio.filter(d => {
+      const year = new Date(d.fecha_contratacion).getFullYear();
+      return year >= lastYear - 4 && year <= lastYear;
+    });
 
-  // Promedio de financiamiento solo FONPLATA últimos 5 años
-  const datosFonplata = datosUlt5.filter(d => d.nombre_acreedor && d.nombre_acreedor.toUpperCase().includes('FONPLATA'));
-  const totalFonplata = datosFonplata.reduce((sum, d) => sum + (d.valor_usd || 0), 0);
-  const promFonplata = totalFonplata / 5 / 1e6; // millones USD
+    const datosFonplata = datosUlt5.filter(d => d.nombre_acreedor && d.nombre_acreedor.toUpperCase().includes('FONPLATA'));
+    const totalFonplata = datosFonplata.reduce((sum, d) => sum + (d.valor_usd || 0), 0);
+    const promFonplataCalc = totalFonplata / 5 / 1e6;
 
-  // Calcular tabla de % Externa por rango de plazo según instrucciones detalladas
-  const plazos = [
-    { label: 'Menor a 5 años', min: 0, max: 4 },
-    { label: '5 a 8 años', min: 5, max: 8 },
-    { label: '9 a 13 años', min: 9, max: 13 },
-    { label: '15 a 20 años', min: 15, max: 20 },
-    { label: 'Mayor a 20 años', min: 21, max: 1000 },
-  ];
-  // Paso 1: Filtrar base de datos
-  const datosFiltrados = datosMunicipio.filter(d =>
-    d.garantia_soberana === 'Si' &&
-    d.tiempo_prestamo !== null && d.tiempo_prestamo !== undefined &&
-    (() => { const y = new Date(d.fecha_contratacion).getFullYear(); return y >= 2020 && y <= 2024; })() &&
-    (d.RGF_clasificacion === 'Externo' || d.RGF_clasificacion === 'Interno')
-  );
-  // Paso 2 y 3: Clasificar y agrupar
-  const tablaPlazos = plazos.map(rango => {
-    const prestamosRango = datosFiltrados.filter(d => d.tiempo_prestamo >= rango.min && d.tiempo_prestamo <= rango.max);
-    const total = prestamosRango.length;
-    const externos = prestamosRango.filter(d => d.RGF_clasificacion === 'Externo').length;
+    const plazos = [
+      { label: 'Menor a 5 años', min: 0, max: 4 },
+      { label: '5 a 8 años', min: 5, max: 8 },
+      { label: '9 a 13 años', min: 9, max: 13 },
+      { label: '15 a 20 años', min: 15, max: 20 },
+      { label: 'Mayor a 20 años', min: 21, max: 1000 },
+    ];
+    const datosFiltrados = datosMunicipio.filter(d =>
+      d.garantia_soberana === 'Si' &&
+      d.tiempo_prestamo !== null && d.tiempo_prestamo !== undefined &&
+      (() => { const y = new Date(d.fecha_contratacion).getFullYear(); return y >= 2020 && y <= 2024; })() &&
+      (d.RGF_clasificacion === 'Externo' || d.RGF_clasificacion === 'Interno')
+    );
+    const tabla = plazos.map(rango => {
+      const prestamosRango = datosFiltrados.filter(d => d.tiempo_prestamo >= rango.min && d.tiempo_prestamo <= rango.max);
+      const total = prestamosRango.length;
+      const externos = prestamosRango.filter(d => d.RGF_clasificacion === 'Externo').length;
+      return {
+        plazo: rango.label,
+        porcentajeExterna: total > 0 ? (100 * externos / total).toFixed(1) : '0.0'
+      };
+    });
+
     return {
-      plazo: rango.label,
-      porcentajeExterna: total > 0 ? (100 * externos / total).toFixed(1) : '0.0'
+      promAprobUlt5: promAprob,
+      promFonplata: promFonplataCalc,
+      tablaPlazos: tabla,
     };
-  });
+  }, [datosMunicipio, lastYear]);
 
-  const chartWidth = Math.min(600, windowWidth - (isMobile ? 40 : 200));
+  const chartWidth = useMemo(
+    () => Math.min(600, windowWidth - (isMobile ? 40 : 200)),
+    [windowWidth, isMobile]
+  );
 
   return (
     <div style={{ background: '#f7f7f9', padding: '0', position: 'relative' }}>
